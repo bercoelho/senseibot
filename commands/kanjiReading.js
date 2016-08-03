@@ -1,32 +1,24 @@
 (function() {
 
-  var request = require('request');
-  var select = require('xpath.js');
-  var DOMParser = require('xmldom').DOMParser;
-
+  var jisho = require('../scripts/jisho.js');
   var utils = require('./utils.js');
 
   function kanjiReading(slackRequest, slackResponse, kanji) {
-    request('http://jisho.org/search/' + encodeURI(kanji) + '%20%23kanji', function(error, jishoResponse, jishoData) {
+    jisho.getKanjiInformation(kanji, function(error, kanjiInformation) {
       if (error) {
         utils.postToSlack(slackResponse, 'What\'s the reading of ' + kanji + '? I don\'t know it either!');
         return;
       }
 
-      var doc = new DOMParser({errorHandler: {warning: null}}).parseFromString(jishoData);
-      var readingNodes = select(doc, '//div[@class="kanji-details__main-readings"]');
-      var kunYomiNodes = select(readingNodes[0], './/*[contains(@class, "kun_yomi")]//a/text()');
-      var onYomiNodes = select(readingNodes[0], './/*[contains(@class, "on_yomi")]//a/text()');
-
-      if (kunYomiNodes.length > 0 || onYomiNodes.length > 0) {
+      if (kanjiInformation.readings.kunYomi.length > 0 || kanjiInformation.readings.onYomi.length > 0) {
         var readings = kanji + ' readings:\n';
 
-        if (kunYomiNodes.length > 0) {
-          readings += '- Kun-yomi: ' + kunYomiNodes.join(', ').replace(/\s+/g, ' ').trim() + '\n';
+        if (kanjiInformation.readings.kunYomi.length > 0) {
+          readings += '- Kun-yomi: ' + kanjiInformation.readings.kunYomi.join(', ');
         }
 
-        if (onYomiNodes.length > 0) {
-          readings += '- On-yomi: ' + onYomiNodes.join(', ').replace(/\s+/g, ' ').trim();
+        if (kanjiInformation.readings.onYomi.length > 0) {
+          readings += '- On-yomi: ' + kanjiInformation.readings.onYomi.join(', ');
         }
 
         utils.postToSlack(slackResponse, readings);

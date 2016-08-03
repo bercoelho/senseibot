@@ -5,8 +5,11 @@
 
   var variables = require('./variables.js');
 
+  var echo = require('./commands/echo.js');
+  var getWanikaniProgression = require('./commands/getWanikaniProgression.js');
   var kanjiMeaning = require('./commands/kanjiMeaning.js');
   var kanjiReading = require('./commands/kanjiReading.js');
+  var registerWanikaniToken = require('./commands/registerWanikaniToken.js');
   var wordMeaning = require('./commands/wordMeaning.js');
   var wordReading = require('./commands/wordReading.js');
   var utils = require('./commands/utils.js');
@@ -20,16 +23,15 @@
   app.post('/trigger', function (slackRequest, slackResponse) {
     if (slackRequest.body.token === variables.SLACK_TOKEN) {
       var command = slackRequest.body.text.substr(slackRequest.body.trigger_word.length).replace(/\s+/g, ' ').trim();
-      var parsed = false;
 
+      var parsed = false;
       parsed = parsed || utils.parseCommand(slackRequest, slackResponse, command, /^kanji meaning (.)$/, kanjiMeaning);
       parsed = parsed || utils.parseCommand(slackRequest, slackResponse, command, /^kanji reading (.)$/, kanjiReading);
       parsed = parsed || utils.parseCommand(slackRequest, slackResponse, command, /^word meaning (.*)$/, wordMeaning);
       parsed = parsed || utils.parseCommand(slackRequest, slackResponse, command, /^word reading (.*)$/, wordReading);
-
-      if (!parsed) {
-        utils.postToSlack(slackResponse, '今日は、' + slackRequest.body.user_name + '！ You said: [' + command  + ']');
-      }
+      parsed = parsed || utils.parseCommand(slackRequest, slackResponse, command, /^wanikani token (.*)$/, registerWanikaniToken);
+      parsed = parsed || utils.parseCommand(slackRequest, slackResponse, command, /^wanikani progression$/, getWanikaniProgression);
+      parsed = parsed || utils.parseCommand(slackRequest, slackResponse, command, /^(.*)$/, echo);
     }
   });
 
